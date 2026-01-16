@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareBreak</title>
+</head>
+<body>
+    <script>
+        let currentAudio = null;
+
+        chrome.runtime.onMessage.addListener((msg) => {
+            if(msg.actione === "PLAY_AUDIO") {
+                if(currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
+
+                currentAudio = new Audio(msg.file);
+                currentAudio.play();
+            }
+
+            if(msg.action === "STOP_AUDIO") {
+                if(currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
