@@ -1,5 +1,4 @@
-let postureAudio = null;
-let waterAudio = null;
+let audioTabId = null;
 
 const postureAudios = [
     "audio/posture/maapu_appu.mp3",
@@ -22,32 +21,19 @@ const waterAudios = [
     "audio/water/yanji.mp3"
 ];
 
-chrome.runtime.onMessage.addListener((message) => {
-    const {action, type, interval} = message;
-
-    if(action === "START_REMINDER") {
-        startReminder(type, interval);
+chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.action === "START_REMINDER") {
+        chrome.alarms.create(msg.type, {
+            delayInMinutes: msg.interval,
+            periodInMinutes: msg.interval
+        });
     }
 
-    if(action === "STOP_REMINDER") {
-        stopReminder(type);
-    }
-
-    if(action === "STOP_AUDIO") {
-        stopAudio(type);
+    if (msg.action === "STOP_REMINDER") {
+        chrome.alarms.clear(msg.type);
+        stopAudio();
     }
 });
-
-function startReminder(type, minutes) {
-    chrome.alarms.create(type, {
-        delayInMinutes: minutes,
-        periodInMinutes: minutes
-    });
-}
-
-function stopReminder(type) {
-    chrome.alarms.clear(type);
-}
 
 chrome.alarms.onAlarm.addListener((alarm) => {
     playAudio(alarm.name);
@@ -55,32 +41,41 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 function playAudio(type) {
-    stopAudio(type);
+    const audioList = type === "posture" ? postureAudios : waterAudios;
+    const randomFile = audioList[Math.floor(Math.random() * audioList.length)];
 
-    let audioFiles = type === "posture" ? postureAudios : waterAudios;
-    const randomIndex = Math.floor(Math.random() * audioFiles.length);
-    const randomFile = audioFiles[randomIndex];
-
-    const audio = new Audio(randomFile);
-    audio.play();
-
-    if(type === "posture") postureAudio = audio;
-    if(type === "water") waterAudio = audio;
-
+    openAudioTab(() => {
+        chrome.tabs.sendMessage(audioTabId, {
+            action: "PLAY_AUDIO",
+            file: randomFile
+        });
+    });
 }
 
-function stopAudio(type) {
-    if(type === "posture" && postureAudio) {
-        postureAudio.pause();
-        postureAudio.currentTime = 0;
-        postureAudio = null;
+function stopAudio() {
+    if (audioTabId) {
+        chrome.tabs.sendMessage(audioTabId, {
+            action: "STOP_AUDIO"
+        });
+    }
+}
+
+function openAudioTab(callback) {
+    if (audioTabId) {
+        callback();
+        return;
     }
 
-    if(type === "water" && waterAudio) {
-        waterAudio.pause();
-        waterAudio.currentTime = 0;
-        waterAudio = null;
-    }
+    chrome.tabs.create(
+        {
+            url: "audio.html",
+            active: false
+        },
+        (tab) => {
+            audioTabId = tab.id;
+            callback();
+        }
+    );
 }
 
 function showNotification(type) {
@@ -94,8 +89,6 @@ function showNotification(type) {
     });
 }
 
-chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
-    if(btnIdx === 0) {
-        stopAudio(notifId);
-    }
+chrome.notifications.onButtonClicked.addListener(() => {
+    stopAudio();
 });
