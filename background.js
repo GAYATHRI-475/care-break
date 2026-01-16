@@ -1,6 +1,27 @@
 let postureAudio = null;
 let waterAudio = null;
 
+const postureAudios = [
+    "audio/posture/maapu_appu.mp3",
+    "audio/posture/santhanam.mp3",
+    "audio/posture/Tamil Comedy Notification.mp3",
+    "audio/posture/vadivelu (1).mp3",
+    "audio/posture/vadivelu_angry.mp3",
+    "audio/posture/vadivelu.mp3",
+    "audio/posture/vijay_comedy.mp3"
+];
+
+const waterAudios = [
+    "audio/water/96_bgm_tamil.mp3.mp3",
+    "audio/water/dude_bgm.mp3",
+    "audio/water/moonu_bgm.mp3",
+    "audio/water/petta_bgm.mp3",
+    "audio/water/thalapathy_65_bgm.mp3",
+    "audio/water/thupakki.mp3",
+    "audio/water/vada_chennai_bgm.mp3",
+    "audio/water/yanji.mp3"
+];
+
 chrome.runtime.onMessage.addListener((message) => {
     const {action, type, interval} = message;
 
@@ -36,10 +57,11 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 function playAudio(type) {
     stopAudio(type);
 
-    const audio = new Audio(
-        type === "posture" ? "audio/posture.mp3" : "audio/water.mp3"
-    );
+    let audioFiles = type === "posture" ? postureAudios : waterAudios;
+    const randomIndex = Math.floor(Math.random() * audioFiles.length);
+    const randomFile = audioFiles[randomIndex];
 
+    const audio = new Audio(randomFile);
     audio.play();
 
     if(type === "posture") postureAudio = audio;
