@@ -17,7 +17,9 @@
                 }
 
                 currentAudio = new Audio(msg.file);
-                currentAudio.play();
+                currentAudio.play().catch((error) => {
+                    console.error("Error playing audio:", error);
+                });
             }
 
             if(msg.action === "STOP_AUDIO") {

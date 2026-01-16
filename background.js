@@ -45,7 +45,7 @@ function playAudio(type) {
     const randomFile = audioList[Math.floor(Math.random() * audioList.length)];
 
     openAudioTab(() => {
-        chrome.tabs.sendMessage(audioTabId, {
+        chrome.runtime.sendMessage(audioTabId, {
             action: "PLAY_AUDIO",
             file: randomFile
         });
@@ -54,7 +54,7 @@ function playAudio(type) {
 
 function stopAudio() {
     if (audioTabId) {
-        chrome.tabs.sendMessage(audioTabId, {
+        chrome.runtime.sendMessage(audioTabId, {
             action: "STOP_AUDIO"
         });
     }
