@@ -14,6 +14,18 @@
 
     "permissions": [
         "alarms",
-        "notifications"
+        "notifications",
+        "tabs"
+    ],
+
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "audio.html",
+                "audio/posture/*.mp3",
+                "audio/water/*.mp3"
+            ],
+            "matches": [ "<all_urls>" ]
+        }
     ]
 }
