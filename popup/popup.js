@@ -47,6 +47,7 @@ stopPosture.addEventListener("click", () => {
 });
 
 startWater.addEventListener("click", () => {
+    const minutes = Number(waterTime.value);
     chrome.runtime.sendMessage({
         action: "START_REMINDER",
         type: "water",
