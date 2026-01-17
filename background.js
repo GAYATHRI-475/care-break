@@ -1,5 +1,3 @@
-let audioTabId = null;
-
 const postureAudios = [
     "audio/posture/maapu_appu.mp3",
     "audio/posture/santhanam.mp3",
@@ -21,6 +19,16 @@ const waterAudios = [
     "audio/water/yanji.mp3"
 ];
 
+async function ensureOffscreen() {
+    if (await chrome.offscreen.hasDocument()) return;
+
+    await chrome.offscreen.createDocument({
+        url: "offscreen.html",
+        reasons: ["AUDIO_PLAYBACK"],
+        justification: "Play posture and water reminder audio"
+    });
+}
+
 chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === "START_REMINDER") {
         chrome.alarms.create(msg.type, {
@@ -31,52 +39,27 @@ chrome.runtime.onMessage.addListener((msg) => {
 
     if (msg.action === "STOP_REMINDER") {
         chrome.alarms.clear(msg.type);
-        stopAudio();
+        chrome.runtime.sendMessage({ action: "STOP_AUDIO" });
     }
 });
 
-chrome.alarms.onAlarm.addListener((alarm) => {
-    playAudio(alarm.name);
+chrome.alarms.onAlarm.addListener(async (alarm) => {
+    await ensureOffscreen();
+
+    const audioList =
+        alarm.name === "posture" ? postureAudios : waterAudios;
+
+    const randomFile =
+        audioList[Math.floor(Math.random() * audioList.length)];
+
+    chrome.runtime.sendMessage({
+        action: "PLAY_AUDIO",
+        file: randomFile,
+        type: alarm.name
+    });
+
     showNotification(alarm.name);
 });
-
-function playAudio(type) {
-    const audioList = type === "posture" ? postureAudios : waterAudios;
-    const randomFile = audioList[Math.floor(Math.random() * audioList.length)];
-
-    openAudioTab(() => {
-        chrome.runtime.sendMessage(audioTabId, {
-            action: "PLAY_AUDIO",
-            file: randomFile
-        });
-    });
-}
-
-function stopAudio() {
-    if (audioTabId) {
-        chrome.runtime.sendMessage(audioTabId, {
-            action: "STOP_AUDIO"
-        });
-    }
-}
-
-function openAudioTab(callback) {
-    if (audioTabId) {
-        callback();
-        return;
-    }
-
-    chrome.tabs.create(
-        {
-            url: "audio.html",
-            active: false
-        },
-        (tab) => {
-            audioTabId = tab.id;
-            callback();
-        }
-    );
-}
 
 function showNotification(type) {
     chrome.notifications.create(type, {
@@ -90,5 +73,6 @@ function showNotification(type) {
 }
 
 chrome.notifications.onButtonClicked.addListener(() => {
-    stopAudio();
+    chrome.runtime.sendMessage({ action: "STOP_AUDIO" });
 });
+
