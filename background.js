@@ -9,7 +9,7 @@ const postureAudios = [
 ];
 
 const waterAudios = [
-    "audio/water/96_bgm_tamil.mp3.mp3",
+    "audio/water/96_bgm_tamil.mp3",
     "audio/water/dude_bgm.mp3",
     "audio/water/moonu_bgm.mp3",
     "audio/water/petta_bgm.mp3",
