@@ -19,6 +19,18 @@ const waterAudios = [
     "audio/water/yanji.mp3"
 ];
 
+let postureRunning = false;
+let waterRunning = false;
+let currentAudioType = null;
+
+chrome.storage.local.get(
+    ["postureRunning", "waterRunning"], 
+    (result) => {
+        postureRunning = result.postureRunning || false;
+        waterRunning = result.waterRunning || false;
+    }
+);
+
 async function ensureOffscreen() {
     if (await chrome.offscreen.hasDocument()) return;
 
@@ -29,17 +41,46 @@ async function ensureOffscreen() {
     });
 }
 
-chrome.runtime.onMessage.addListener((msg) => {
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === "START_REMINDER") {
         chrome.alarms.create(msg.type, {
             delayInMinutes: msg.interval,
             periodInMinutes: msg.interval
         });
+
+        if(msg.type === "posture") postureRunning = true;
+        if(msg.type === "water") waterRunning = true;
+
+        chrome.storage.local.set({
+            postureRunning,
+            waterRunning
+        });
     }
 
     if (msg.action === "STOP_REMINDER") {
         chrome.alarms.clear(msg.type);
-        chrome.runtime.sendMessage({ action: "STOP_AUDIO" });
+
+        if(msg.type === "posture") postureRunning = false;
+        if(msg.type === "water") waterRunning = false;
+
+        chrome.storage.local.set({
+            postureRunning,
+            waterRunning
+        });
+
+        if(currentAudioType === msg.type) {
+            safeSendMessage({action : "STOP_AUDIO", type: currentAudioType });
+            chrome.notifications.clear(msg.type);
+            currentAudioType = null;
+        }
+    }
+
+    if(msg.action === "GET_STATE") {
+        sendResponse({
+            postureRunning,
+            waterRunning
+        });
+        return true;
     }
 });
 
@@ -52,7 +93,14 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const randomFile =
         audioList[Math.floor(Math.random() * audioList.length)];
 
-    chrome.runtime.sendMessage({
+    if(currentAudioType && currentAudioType !== alarm.name) {
+        safeSendMessage({ action: "STOP_AUDIO", type: currentAudioType });
+        chrome.notifications.clear(currentAudioType);
+    }
+
+    currentAudioType = alarm.name;
+
+    safeSendMessage({
         action: "PLAY_AUDIO",
         file: randomFile,
         type: alarm.name
@@ -72,7 +120,18 @@ function showNotification(type) {
     });
 }
 
-chrome.notifications.onButtonClicked.addListener(() => {
-    chrome.runtime.sendMessage({ action: "STOP_AUDIO" });
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+    if (notificationId === currentAudioType) {
+        safeSendMessage({ action: "STOP_AUDIO", type: currentAudioType });
+        chrome.notifications.clear(notificationId);
+        currentAudioType = null;
+    }
 });
 
+function safeSendMessage(message) {
+    chrome.runtime.sendMessage(message, () => {
+        if (chrome.runtime.lastError) {
+
+        }  
+    });
+}
