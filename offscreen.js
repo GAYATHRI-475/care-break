@@ -20,11 +20,13 @@ chrome.runtime.onMessage.addListener((msg) => {
     }
 
     if (msg.action === "STOP_AUDIO") {
-        if (currentAudio) {
-            currentAudio.pause();
-            currentAudio.currentTime = 0;
-            currentAudio = null;
-            currentType = null;
+        if(msg.type && msg.type === currentType) {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                currentAudio = null;
+                currentType = null;
+            }
         }
     }
 });
