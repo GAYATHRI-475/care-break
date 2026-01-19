@@ -29,8 +29,25 @@ waterBtn.addEventListener("click" , () => {
     postureSection.classList.add("hidden");
 });
 
+window.addEventListener("DOMContentLoaded", () => {
+    chrome.storage.local.get(["postureInterval", "waterInterval"], (result) => {
+        if(result.postureInterval) postureTime.value = result.postureInterval;
+        if(result.waterInterval) waterTime.value = result.waterInterval;
+    });
+
+    chrome.runtime.sendMessage({action: "GET_STATE"}, (state) => {
+        if(!state) return;
+        if(state.postureRunning) startPosture.disabled = true;
+        if(state.waterRunning) startWater.disabled = true;
+    });
+
+})
+
 startPosture.addEventListener("click", () => {
     const minutes = Number(postureTime.value);
+
+    chrome.storage.local.set({postureInterval: minutes});
+    startPosture.disabled = true;
 
     chrome.runtime.sendMessage({
         action: "START_REMINDER",
@@ -40,6 +57,10 @@ startPosture.addEventListener("click", () => {
 });
 
 stopPosture.addEventListener("click", () => {
+    startPosture.disabled = false;
+
+    postureTime.value = postureTime.defaultValue;
+
     chrome.runtime.sendMessage({
         action: "STOP_REMINDER",
         type: "posture"
@@ -48,6 +69,10 @@ stopPosture.addEventListener("click", () => {
 
 startWater.addEventListener("click", () => {
     const minutes = Number(waterTime.value);
+
+    chrome.storage.local.set({waterInterval: minutes});
+    startWater.disabled = true;
+
     chrome.runtime.sendMessage({
         action: "START_REMINDER",
         type: "water",
@@ -56,6 +81,10 @@ startWater.addEventListener("click", () => {
 });
 
 stopWater.addEventListener("click", () => {
+    startWater.disabled = false;
+
+    waterTime.value = waterTime.defaultValue;
+
     chrome.runtime.sendMessage({
         action: "STOP_REMINDER",
         type: "water"
