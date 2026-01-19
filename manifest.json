@@ -15,13 +15,13 @@
     "permissions": [
         "alarms",
         "notifications",
-        "offscreen"
+        "offscreen",
+        "storage"
     ],
 
     "web_accessible_resources": [
         {
             "resources": [
-                "offscreen.html",
                 "audio/posture/*.mp3",
                 "audio/water/*.mp3"
             ],
