@@ -79,3 +79,10 @@ input[type="number"] {
     background: #f44336;
     color: white;
 }
+
+#startPosture:disabled,
+#startWater:disabled {
+    background: #b0b0b0;
+    color: #666;
+    cursor: not-allowed;
+}
